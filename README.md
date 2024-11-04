@@ -31,7 +31,7 @@ This report compares the demographics of Black patients participating in U.S. cl
 Data used in these analyses were collected from:
 - **ClinicalTrials.gov**: Publicly available clinical trial data for scleroderma, BCC, and cSCC.
 - **U.S. Census Bureau**: Population estimates and demographics for calculating expected representation in clinical trials.
-- **Research Studies**: Findings from studies such as those by Mayes et al. (2003) and Lukowiak et al., which provided population and demographic baselines for the patient populations analyzed.
+- **Research Studies**: Findings from studies such as those by Mayes et al. (2003) and Lukowiak et al. (2020), which provided population and demographic baselines for the patient populations analyzed.
 
 ## Packages Used
 The R scripts in this repository utilize the following packages:
