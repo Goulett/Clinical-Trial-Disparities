@@ -1,0 +1,317 @@
+---
+title: "Analysis of Disparity Between Scleroderma Clinical Trial Participant Demographics and Scleroderma Patient Demographics in the United States"
+author: "Natalie Goulett"
+date: "`r Sys.Date()`"
+number-sections: true
+format: html
+embed-resources: false
+---
+
+
+
+# Summary
+
+ To investigate whether the demographics of scleroderma clinical trial participants are reflective of the scleroderma patient population, we conduct a Pearson's chi-square test to compare the proportion of Black patients enrolled in scleroderma clinical trials to the estimated proportion of black patients with scleroderma in the United States. Furthermore, we will quantify this disparity by estimating the percent of all Black scleroderma patients that are unrepresented in clinical trials in the United States. We will focus specifically on the southeastern U.S., which is home to about half of the United States' total black population.
+
+## Data Sources
+
+We suspect the demographics of scleroderma patients in the United States are similar to those of the patient population described in a [census by Mayes, et al., 2003](https://pubmed.ncbi.nlm.nih.gov/12905479/). This census measured the prevalence of systemic scleroderma in a patient population in Detroit, MI in 2003. We will use prevalence estimates provided by this study to estimate the actual prevalence of scleroderma among the black population in the United States.
+
+Our U.S. clinical trial demographic data were gathered from all publicly available NCBI clinical trials on scleroderma conducted in the United States that were available on [ClinicalTrials.gov](https://clinicaltrials.gov/). Population estimates and demographics for the U.S. and each U.S. state as of July 30th, 2024 were provided by the [U.S. Census Bureau](https://www.census.gov/quickfacts/fact/table/US/PST045222).
+
+## Methods
+
+To conduct the Pearson's chi-square test on the proportion of Black patients enrolled in scleroderma clinical trials to the estimated proportion of black patients with scleroderma in the United States, we will compare the proportion of Black participants from the population studied in Mayes, et al. to the proportion of Black patients that have participated in publicly available U.S. clinical trials on scleroderma as of July 30th, 2024.
+
+
+
+# U.S. Clinical Trial vs. Scleroderma Patient Demographics Chi-Square Test
+
+## Packages Used
+
+```{r}
+#| label: packages-used
+#| warning: false
+
+# Install and load required packages:
+# install.packages("tidyverse")
+# install.packages("gt")
+
+library(tidyverse)  # for data wrangling and visualization
+library(gt) # for creating table
+
+```
+
+
+## Data Transformation 
+
+```{r}
+#| label: read-and-transform-data
+#| warning: false
+
+ct_demo_df <- read_csv(
+  "./Data/20240717_usSScClinTrialDemo.csv",
+  col_names = TRUE,
+  na = c("#N/A", "#NA", "Not Reported", "Not reported")) %>% 
+  rename(
+    "total_participants" = "Number of participants analyzed - use this number for total participants",
+    "female" = "Female",
+    "male" = "Male",
+    "other_gender" = "Other",
+    "study_ID" = "ClinicalTrials.gov ID",
+    "hispanic" = "Hispanic or Latino",
+    "non_hispanic" = "Not Hispanic or Latino",
+    "unknown_ethnicity" = "Unknown or not reported ethnicity",
+    "native_american_an" = "American Indian or Alaska Native",
+    "asian" = "Asian",
+    "native_hawaiian_pi" = "Native Hawaiian or Other Pacific Islander",
+    "black_participants" = "Black or African American",
+    "white_participants" = "White",
+    "multi_race" = "More than one race",
+    "unknown_race" = "Unknown or not reported"
+  ) %>% 
+  drop_na(total_participants, black_participants)
+
+```
+
+
+## Pariticpant Demographics Calculation
+
+```{r}
+#| label: demographics
+#| warning: false
+
+# total U.S. clinical trial participants
+ct_n <-  sum(ct_demo_df$total_participants, na.rm = TRUE)
+
+# Summarize participants by race, gender, and ethnicity
+race_summary <- ct_demo_df %>%
+  summarise(
+    total_black = sum(black_participants, na.rm = TRUE),
+    total_white = sum(white_participants, na.rm = TRUE),
+    total_native_american_an = sum(native_american_an, na.rm = TRUE),
+    total_native_hawaiian_pi = sum(native_hawaiian_pi, na.rm = TRUE),
+    total_asian = sum(asian, na.rm = TRUE),
+    total_multi_race = sum(multi_race, na.rm = TRUE),
+    total_unknown_race = sum(unknown_race, na.rm = TRUE),
+    percent_black = (total_black / ct_n) * 100,
+    percent_white = (total_white / ct_n) * 100,
+    percent_native_american_an = (total_native_american_an / ct_n) * 100,
+    percent_native_hawaiian_pi = (total_native_hawaiian_pi / ct_n) * 100,
+    percent_asian = (total_asian / ct_n) * 100,
+    percent_multi_race = (total_multi_race / ct_n) * 100,
+    percent_unknown_race = (total_unknown_race / ct_n) * 100,
+    total_reporting_race = sum(
+      total_black,
+      total_white,
+      total_native_american_an,
+      total_native_hawaiian_pi,
+      total_asian,
+      total_multi_race
+    )
+  )
+
+gender_summary <- ct_demo_df %>% 
+  summarise(
+    total_male = sum(male, na.rm = TRUE),
+    total_female = sum(female, na.rm = TRUE),
+    percent_male = (total_male / ct_n) * 100,
+    percent_female = (total_female / ct_n) * 100
+  )
+
+ethnicity_summary <- ct_demo_df %>%
+  summarise(
+    total_hispanic = sum(hispanic, na.rm = TRUE),
+    total_non_hispanic = sum(non_hispanic, na.rm = TRUE),
+    total_unknown_ethnicity = sum(unknown_ethnicity, na.rm = TRUE),
+    total_reporting_ethnicity = sum(total_hispanic, total_non_hispanic),
+    percent_hispanic = (total_hispanic / total_reporting_ethnicity) * 100,
+    percent_non_hispanic = (total_non_hispanic / total_reporting_ethnicity) * 100
+  )
+
+# Combine summaries into one data frame
+demographics_df <- bind_cols(
+  race_summary,
+  gender_summary,
+  ethnicity_summary
+) %>% 
+  pivot_longer(cols = everything())
+
+print(demographics_df, n = 25)
+
+```
+
+
+## Create Contingency Table
+
+```{r}
+#| label: contingency-table
+#| warning: false
+
+# calculate number of black U.S. clinical trial participants
+ct_n_black <- sum(ct_demo_df$black_participants, na.rm = TRUE)
+# calculate number of non-black U.S. clinical trial participants
+ct_n_nonblack <- ct_n - ct_n_black
+
+# Input demographics of patient population characterized in Mayes et al., 2003
+mayes_n <- 706
+mayes_n_black <- 186
+mayes_n_nonblack <- mayes_n - mayes_n_black
+
+# Create contingency table of expected and observed demographics
+demo_contingency_table <- matrix(
+  c(
+    ct_n_black,
+    mayes_n_black,
+    ct_n_nonblack,
+    mayes_n_nonblack
+  ),
+  nrow = 2
+)
+
+colnames(demo_contingency_table) <- c("Black", "Non-Black")
+rownames(demo_contingency_table) <- c(
+  "Clinical Trial Participants",
+  "Scleroderma Patients"
+)
+
+```
+
+
+## Pearson's Chi-Square Test on Demographics
+
+```{r}
+#| label: chi-square-test
+
+
+demo_chi_sq <- chisq.test(
+  demo_contingency_table,
+  correct = TRUE
+)
+
+print(demo_chi_sq)
+```
+
+### Interpretation
+
+The proportion of black scleroderma patients studied in Mayes et al. is significantly larger than the proportion of black participants enrolled in scleroderma clinical trials available on [ClinicalTrials.gov](https://clinicaltrials.gov/), $X^2$ (1, N = 1397) = 73.9, *p* < .001. Thus, it is suspected that the true proportion of black scleroderma patients in the U.S. is greater than that in U.S. clinical trials.
+
+
+
+# Black Representation in U.S. Scleroderma Clinical Trials
+
+The number of black scleroderma patients in the U.S. and southeastern U.S. states that are unrepresented in U.S. clinical trials was estimated using prevalence data from [Mayes, et al., 2003](https://pubmed.ncbi.nlm.nih.gov/12905479/) and demographic data and population size estimates from the [U.S. Census Bureau](https://www.census.gov/quickfacts/fact/table/US/PST045222).
+
+## Representation Estimates Calculation
+
+```{r}
+#| label: us-representation
+#| warning: false
+
+# Create data frame of state demographics from US Census Bureau estimates
+
+# Estimate scleroderma prevalence in U.S. black population from Mayes et al.
+scPrevalence_Black <- 315.1/1000000
+# Estimate scleroderma prevalence in total U.S. population from Mayes et al.
+scPrevalence_Total <- 242/1000000
+# Percent of black patients in U.S. scleroderma clinical trials
+us_ct_PercentBlack <- ct_n_black/ct_n
+
+# Read in state population and percent black data from U.S. Census Bureau
+statePop_df <- read_csv("Data/20240812_SeStatePopulations.csv")
+
+# Create data frame of Southeast states
+# Exclude the row representing the entire U.S.
+southeast_df <- statePop_df[statePop_df$state != "United_States", ]
+
+# Calculate the total population for the southeastern states
+se_population <- sum(southeast_df$population)
+
+# Calculate the weighted average of the percent black population
+weighted_percent_black <- sum(
+  southeast_df$population * southeast_df$percentBlack
+  ) / se_population
+
+# Create a new row for the southeastern U.S.
+southeast_row <- data.frame(
+  state = "Southeastern US",
+  population = se_population,
+  percentBlack = weighted_percent_black
+)
+
+# Append the new row to the original data.frame
+statePop_df <- rbind(statePop_df, southeast_row)
+
+# Calculate percent of unrepresented black patients for each region and state
+stateScRep <- statePop_df %>% 
+  mutate(
+    blackPop = population * percentBlack,
+    blackPatients = blackPop * scPrevalence_Black,
+    totalPatients = population * scPrevalence_Total,
+# Calculate represented black patients; 8.9% of the total patient population
+    repBlackPatients = totalPatients * us_ct_PercentBlack,
+# Calculate unrepresented black patients by subtracting represented black
+#   patients from total black patients
+    unrepBlackPatients = blackPatients - repBlackPatients,
+    percentUnrep = unrepBlackPatients / blackPatients,
+# Calculate the proportion of scleroderma patients that identify as black
+    proportionBlack = blackPatients / totalPatients
+  ) %>% 
+  arrange(desc(population))
+
+```
+
+```{r}
+#| label: representation-table
+#| warning: false
+
+# Create representation by state table
+stateScRep %>% 
+  select(
+    state,
+    percentBlack,
+    blackPatients,
+    totalPatients,
+    proportionBlack,
+    unrepBlackPatients,
+    percentUnrep
+  ) %>% 
+  mutate(state = gsub("_", " ", state)) %>%
+  gt() %>% 
+   cols_label(
+    state = "",
+    percentBlack = "Percent of Population Identifying as Black",
+    blackPatients = "Estimated Black Scleroderma Patients",
+    totalPatients = "Estimated Total Scleroderma Patients",
+    proportionBlack = "Percent of Scleroderma Patients who are Black",
+    unrepBlackPatients = "Estimated Unrepresented Black Patients",
+    percentUnrep = "Percent of Patients Unrepresented"
+  ) %>% 
+  fmt_number(
+    columns = c(blackPatients, totalPatients, unrepBlackPatients),
+    decimals = 0,
+    drop_trailing_dec_mark = TRUE,
+    use_seps = TRUE,
+    sep_mark = ","
+  ) %>% 
+  fmt_percent(
+  columns = c(percentBlack, proportionBlack, percentUnrep),
+  decimals = 1
+  ) %>% 
+  tab_header(
+    title = "Black Representation in U.S. Scleroderma Clinical Trials by State"
+  ) %>% 
+  tab_source_note(
+    source_note = md(
+      "*Note.* National and state population data were provided by the U.S. Census Bureau. U.S. clinical trial demographics were sourced from publicly available NCBI clinical trial data available on ClinicalTrials.gov."
+    )
+  ) %>% 
+  opt_table_font(
+    font = "Times New Roman"
+    )
+
+```
+
+## Interpretation
+
+Of the 14,458 estimated black scleroderma patients in the United States, about 7,420 (51.3%) are unrepresented in clinical trials. Approximately 3,826 of these unrepresented patients reside in the southeast region of the United States, where an estimated 70.4% of black scleroderma patients are unrepresented in clinical trials. Between the southeastern states, the estimated percent of unrepresented black scleroderma patients ranges from 24.2% in Kentucky to 82.4% in Mississippi.

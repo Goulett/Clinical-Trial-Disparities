@@ -1,0 +1,407 @@
+---
+title: 'Underepresentation of Black Individuals with Basal Cell Carcinoma (BCC) and Cutaneous Squamous Cell Carcinoma (cSCC) in U.S. Clinical Trials:  A Comparison of the Demographics of Clinical Trial Participants to Those of an Insurance Claimant Cohort in the United States'
+author: "Natalie Goulett"
+date: "2024-09-15"
+output: word_document
+number-sections: true
+embed-resources: true
+---
+
+
+
+# Summary
+
+Non-melanoma Skin Cancers (NMSC), which are comprised of Basal Cell Carcinomas (BCC) and Cutaneous Squamous Cell Carcinomas (cSCC), are the most common cancers in the United States. To investigate the degree to which Black BCC and cSCC patients are represented in U.S. clinical trials, the proportions of Black participants in U.S. clinical trials for BCC and cSCC were compared to the proportions of Black individuals in a cohort who made insurance claims for BCC or cSCC treatment in the United States. Furthermore, this disparity was visualized and quantified by estimating how many Black individuals diagnosed in the United States with BCC or cSCC per year are unrepresented in U.S. clinical trials.
+
+## Data Sources
+
+A [cross-sectional study](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7450404/) by Lukowiak, et al. analyzed insurance claims data from the Optum Clinformatics Data Mart to compare the prevalence of BCC and cSCC between sexes, races, and geographic regions in the United States. The demographics of patients who made BCC and cSCC Medicare claims examined in this study are assumed to be reflective of the U.S. patient population and are assumed to represent the true BCC and cSCC patient demographics in the United States.
+
+U.S. clinical trial demographic data were gathered from all publicly available clinical trials on BCC or cSCC conducted in the United States that were available on [ClinicalTrials.gov](https://clinicaltrials.gov/) as of June 28th, 2024.
+
+In 2023, the [American Cancer Society](https://www.cancer.org/cancer/types/basal-and-squamous-cell-skin-cancer/about/key-statistics.html) estimated that the number of persons diagnosed with BCC or cSCC per year in the United States is 3,315,554. This number was used to estimate the numbers of Black BCC and cSCC patients diagnosed per year who are unrepresented in U.S. clinical trials.
+
+## Methods
+
+Two Pearson’s Chi-square tests with Yates’ continuity correction were conducted using RStudio to compare the proportions of Black participants that have participated in U.S. clinical trials vs. that of the commercially insured cohort for both BCC and cSCC cancers.
+
+The Estimated number of persons diagnosed with skin cancer per year provided by the American Cancer Society, along with the demographics and race-specific ratio of BCC-to-cSCC diagnoses provided by Lukowiak, et al. and U.S. clinical trial demographic data, were used to estimate the numbers of Black BCC and cSCC patients diagnosed per year who are unrepresented in U.S. clinical trials.
+
+
+
+# Chi-Square Test of U.S. BCC Clinical Trial Participants vs. Insurance Claimant Demographics
+
+Out of 1,466 BCC clinical trial participants in the U.S., only 9 (0.6%) were Black. However, of the 618,516 individuals who made insurance claims for BCC treatment described in Lukowiak, et al., 23,315 (3.7%) were Black. A Pearson’s Chi-square test with Yates’ continuity correction was conducted to test the difference between the proportions of Black participants in these two groups.
+
+## Packages Used
+
+```{r}
+#| label: packages-used
+#| warning: false
+#| message: false
+
+# Install and load required packages:
+# install.packages("tidyverse")
+# install.packages("extrafont") # optional
+
+library(tidyverse)  # for data wrangling
+library(extrafont)  # To use more fonts in graphs (optional)
+
+```
+
+## Data Transformation 
+
+```{r}
+#| label: read-and-transform-bcc-data
+#| warning: false
+
+# read BCC US clinical trial demographic data
+bccCtDemo_df <- read_csv(
+  "./Data/20240830_bccUsctDemog.csv",
+  col_names = TRUE,
+  na = c("#N/A", "#NA", "Not Reported", "Not reported"),
+  show_col_types = FALSE
+  ) %>%
+  rename(
+    "total_participants" = "Number of participants analyzed",
+    "study_ID" = "ClinicalTrials.gov ID",
+    "black_participants" = "Black or African American",
+    "white_participants" = "White"
+  ) %>%
+  select(
+    c(
+      "study_ID",
+      "total_participants",
+      "black_participants",
+      "white_participants"
+    )
+  ) %>% 
+  filter(!is.na(black_participants) | !is.na(white_participants)
+)
+
+# calculate total participants
+bcc_ct_n <- sum(bccCtDemo_df$total_participants, na.rm = TRUE)
+# calculate number of Black participants
+bcc_ct_n_black <- sum(bccCtDemo_df$black_participants, na.rm = TRUE)
+# calculate number of non-Black participants
+bcc_ct_n_nonblack <- bcc_ct_n - bcc_ct_n_black
+
+# Demographics from Lukowiak, et al.:
+# total number of claimants
+bcc_claim_n <- 618516
+# number of Black claimants
+bcc_claim_n_black <- 23315
+# number of non-Black claimants
+bcc_claim_n_nonblack <- bcc_claim_n - bcc_claim_n_black
+
+# Create contingency table of expected and observed BCC patient demographics
+bcc_demo_contingency_table <- matrix(
+  c(
+    bcc_ct_n_nonblack,
+    bcc_claim_n_nonblack,
+    bcc_ct_n_black,
+    bcc_claim_n_black
+  ),
+  nrow = 2
+)
+
+colnames(bcc_demo_contingency_table) <- c(
+  "BCC Claimants",
+  "BCC Clinical Trial Participants"
+)
+rownames(bcc_demo_contingency_table) <- c(
+  "Black Patients",
+  "Non-Black Patients"
+)
+
+```
+
+## Chi-Square Test (BCC)
+
+```{r}
+#| label: chi-square-test-bcc
+#| warning: false
+
+# conduct chi square test to compare BCC clinical trial vs. insurance claimant
+#   demographics
+bcc_demo_chi_sq <- chisq.test(
+  bcc_demo_contingency_table,
+  correct = TRUE
+)
+
+print(bcc_demo_chi_sq)
+```
+
+### Interpretation
+
+The proportion of insurance claimants with BCC who are Black (3.7%) is greater than the proportion of Black individuals enrolled in U.S. BCC clinical trials (0.6%) available on [ClinicalTrials.gov](https://clinicaltrials.gov/), $X^2$ (1, N = 619,982) = 39.358, *p* < 0.0001. This result strongly suggests the true proportion of Black BCC patients in the United States is greater than that of the respective U.S. clinical trial participants.
+
+
+
+# Chi-Square Test of U.S. cSCC Clinical Trial Participants vs. Insurance Claimant Demographics
+
+Out of 1,359 cSCC clinical trial participants in the U.S., only 19 (1.4%) were Black. However, of the 366,801 individuals who made insurance claims for cSCC treatment described in Lukowiak, et al., 16,070 (4.4%) were Black. A second Pearson’s Chi-square test with Yates’ continuity correction  was conducted to test the difference between the proportions of Black participants in these two groups.
+
+## Data Transformation 
+
+```{r}
+#| label: read-and-transform--cscc-data
+#| warning: false
+
+# read cSCC U.S. clinical trial demographic data
+csccCtDemo_df <- read_csv(
+  "./Data/20240829_csccUsctDemog.csv",
+  col_names = TRUE,
+  na = c("#N/A", "#NA", "Not Reported", "Not reported"),
+  show_col_types = FALSE
+  ) %>%
+  rename(
+    "total_participants" = "Number of participants analyzed",
+    "study_ID" = "ClinicalTrials.gov ID",
+    "black_participants" = "Black or African American",
+    "white_participants" = "White"
+  ) %>%
+  select(
+    c(
+      "study_ID",
+      "total_participants",
+      "black_participants",
+      "white_participants"
+    )
+  ) %>% 
+  filter(!is.na(black_participants) | !is.na(white_participants)
+)
+
+# calculate total participants
+cscc_ct_n <- sum(csccCtDemo_df$total_participants, na.rm = TRUE)
+# calculate number of Black participants
+cscc_ct_n_black <- sum(csccCtDemo_df$black_participants, na.rm = TRUE)
+# calculate number of non-Black participants
+cscc_ct_n_nonblack <- cscc_ct_n - cscc_ct_n_black
+
+# Demographics from Lukowiak, et al.:
+# total number of claimants
+cscc_claim_n <- 366801
+# number of Black claimants
+cscc_claim_n_black <- 16070
+# number of non-Black claimants
+cscc_claim_n_nonblack <- cscc_claim_n - cscc_claim_n_black
+
+# Create contingency table of expected and observed cSCC patient demographics
+cscc_demo_contingency_table <- matrix(
+  c(
+    cscc_ct_n_nonblack,
+    cscc_claim_n_nonblack,
+    cscc_ct_n_black,
+    cscc_claim_n_black
+  ),
+  nrow = 2
+)
+
+colnames(cscc_demo_contingency_table) <- c(
+  "cSCC Claimants",
+  "cSCC Clinical Trial Participants"
+)
+rownames(cscc_demo_contingency_table) <- c(
+  "Black Patients",
+  "Non-Black Patients"
+)
+
+```
+
+## Chi-Square Test (cSCC)
+
+```{r}
+#| label: chi-square-test-cscc
+#| warning: false
+
+# conduct chi square test to compare cSCC clinical trial vs. insurance claimant
+#   demographics
+cscc_demo_chi_sq <- chisq.test(
+  cscc_demo_contingency_table,
+  correct = TRUE
+)
+
+print(cscc_demo_chi_sq)
+
+```
+
+### Interpretation
+
+The proportion of insurance claimants with cSCC who are Black (4.4%) is greater than the proportion of Black individuals enrolled in U.S. cSCC clinical trials (1.4%) available on [ClinicalTrials.gov](https://clinicaltrials.gov/), $X^2$ (1, N = 368,160) = 28.121, *p* < 0.0001. This result strongly suggests the true proportion of Black cSCC patients in the United States is greater than that of the respective U.S. clinical trial participants.
+
+
+
+# Black Representation in U.S. BCC and cSCC Clinical Trials
+
+To investigate the degree of representation of Black BCC and cSCC patients in U.S. clinical trials, we will compare the estimated number of Black persons that will be diagnosed with BCC or cSCC in 2024 based on insurance claims data to the number of expected diagnoses if the BCC and cSCC insurance claimant population had the same demographic distribution as that of the participants in U.S. BCC and cSCC clinical trials.
+
+```{r}
+#| label: bcc-cscc-representation
+#| warning: false
+
+# calculate proportion of BCC clinical trial participants who are Black
+bcc_ct_prop_black <- bcc_ct_n_black / bcc_ct_n
+# Estimated umber of new BCC and cSCC patients per year provided by the
+#  American Cancer Society
+nmsc_yr <- 3315554
+# proportion of NMSC claimants who are Black from Lukowiak, et al.:
+nmsc_prop_black <- 0.0413
+# proportion of BCC diagnoses among Black NMSC claimants from Lukowiak, et al.:
+prop_black_bcc <- 23315 / 39385
+# Estimate number of Black BCC patients diagnosed per year
+bcc_n_black_yr <- nmsc_yr * nmsc_prop_black * prop_black_bcc
+# calculate est Black BCC patients diagnosed per year that are represented by
+#   clinical trial participants
+bcc_n_rep_black_yr <- nmsc_yr * bcc_ct_prop_black * prop_black_bcc
+# calculate number of unrepresented BCC patients diagnosed in 2024
+bcc_n_unrep_black_yr <- bcc_n_black_yr - bcc_n_rep_black_yr
+
+# calculate proportion of cSCC clinical trial participants who are Black
+cscc_ct_prop_black <- cscc_ct_n_black / cscc_ct_n
+# proportion of cSCC diagnoses among Black NMSC claimants from Lukowiak, et al.:
+prop_black_cscc <- 16070 / 39385
+# Estimate number of Black cSCC patients diagnosed per year
+cscc_n_black_yr <- nmsc_yr * nmsc_prop_black * prop_black_cscc
+# calculate est Black cSCC patients diagnosed per year that are represented by
+#   clinical trial participants
+cscc_n_rep_black_yr <- nmsc_yr * cscc_ct_prop_black * prop_black_cscc
+# calculate number of unrepresented cSCC patients diagnosed in 2024
+cscc_n_unrep_black_yr <- cscc_n_black_yr - cscc_n_rep_black_yr
+
+# proportion of Black patients unrepresented
+bcc_n_unrep_black_yr / bcc_n_black_yr
+cscc_n_unrep_black_yr / cscc_n_black_yr
+
+```
+
+It was estimated that among Black individuals in the United States, 81,061 will be diagnosed with BCC and 55,872 will be diagnosed with cSCC in 2024. Accounting for the percent of participants who are Black in BCC (0.6%) and cSCC (1.4%) clinical trials, it was estimated that only 12,049 (14.9%) of these Black individuals diagnosed with BCC and 18,914 (33.9%) diagnosed with cSCC per year will be represented by clinical trial participants. As a result, an estimated 69,011 (85.1%) of these Black individuals diagnosed with BCC and an estimated 36,958 (66.1%) diagnosed with cSCC will not be represented in U.S. clinical trials.
+
+## Visualization of Demographics in U.S. Clinical Trials vs. U.S. Population
+
+The percentages of White and Black individuals in BCC clinical trials vs. that of insurance claimants with BCC are visually compared below:
+
+```{r}
+#| label: bcc-demographics-barplot
+
+# loadfonts(device = "win")
+
+# proportion of US BCC patients who are black
+bcc_claim_prop_black <- bcc_claim_n_black / bcc_claim_n
+# calculate proportions of white and black BCC clinical trial participants
+bcc_ct_n_white <- sum(bccCtDemo_df$white_participants, na.rm = TRUE)
+bcc_ct_prop_white <- bcc_ct_n_white / bcc_ct_n
+# calculate proportions of white and black BCC claimants
+bcc_claim_n_white <- 556716
+bcc_claim_prop_white <- bcc_claim_n_white / bcc_claim_n
+
+# barplot of % white and black participants in BCC clinical trials vs claims
+bar_pop <- c(
+  rep("Clinical trial participants", 2),
+  rep( "Insurance claimants", 2)
+)
+bar_race <- rep(c("Black", "White"), 2)
+bcc_prop <- c(
+  bcc_ct_prop_black,
+  bcc_ct_prop_white,
+  bcc_claim_prop_black,
+  bcc_claim_prop_white
+)
+bcc_demoBar <- data.frame(
+  bar_pop,
+  bar_race,
+  bcc_prop
+)
+
+bccplot <- ggplot(
+  bcc_demoBar,
+  aes(
+    fill = bar_race,
+    y = bcc_prop,
+    x = bar_pop
+    )
+  ) +
+  geom_bar(position = "dodge", stat = "identity") +
+  labs(
+    title = str_wrap(
+      "Race of BCC clinical trial participants vs. insurance claimants with BCC in the United States",
+      width = 50
+    ),
+    fill = "Race",
+    y = "Percent",
+    x = NULL
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(
+    text = element_text(family = "Times New Roman"),
+    axis.text.x = element_text(size = 11),
+    axis.title.y = element_text(size = 11),
+    title = element_text(size = 11),
+    plot.title = element_text(
+      hjust = 0,
+      face = "italic",
+      margin = margin(b = 20) 
+    )
+  )
+
+print(bccplot)
+
+```
+Likewise, the percentages of White and Black individuals in cSCC clinical trials vs. that of insurance claimants with cSCC are visually compared below:
+
+```{r}
+#| label: cscc-demographics-barplot
+
+# proportion of US cSCC patients who are black
+cscc_claim_prop_black <- cscc_claim_n_black / cscc_claim_n
+# calculate proportions of white and black BCC clinical trial participants
+cscc_ct_n_white <- sum(csccCtDemo_df$white_participants, na.rm = TRUE)
+cscc_ct_prop_white <- cscc_ct_n_white / cscc_ct_n
+# calculate proportions of white and black BCC claimants
+cscc_claim_n_white <- 330285
+cscc_claim_prop_white <- cscc_claim_n_white / cscc_claim_n
+
+# barplot of % white and black participants in BCC clinical trials vs claims
+cscc_prop <- c(
+  cscc_ct_prop_black,
+  cscc_ct_prop_white,
+  cscc_claim_prop_black,
+  cscc_claim_prop_white
+)
+cscc_demoBar <- data.frame(bar_pop, bar_race, cscc_prop)
+
+csccplot <- ggplot(
+  cscc_demoBar,
+  aes(
+    fill = bar_race,
+    y = cscc_prop,
+    x = bar_pop
+    )
+  ) +
+  geom_bar(position = "dodge", stat = "identity") +
+  labs(
+      title = str_wrap(
+        "Race of cSCC clinical trial participants vs. insurance claimants with cSCC in the United States",
+        width = 50
+      ),
+      fill = "Race",
+      y = "Percent",
+      x = NULL
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  theme(
+    text = element_text(family = "Times New Roman"),
+    axis.text.x = element_text(size = 11),
+    axis.title.y = element_text(size = 11),
+    title = element_text(size = 11),
+    plot.title = element_text(
+      hjust = 0,
+      face = "italic",
+      margin = margin(b = 20)
+    )
+  )
+
+print(csccplot)
+
+```
+As seen in both graphs, lower proportions of Black individuals and higher proportions of White individuals are seen in both BCC and cSCC clinical trials when compared to the commercially insured cohort.
