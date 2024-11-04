@@ -1,10 +1,11 @@
 # title: "Analysis of Disparity Between Scleroderma Clinical Trial Participant
 #   Demographics and Scleroderma Patient Demographics in the United States"
 # author: "Natalie Goulett"
+# date: 2024-09-12
 
 # Note: This is the R code copied from my full analysis report in the
-#   scleroDemogAnalysis.qmd file. Please see the .qmd or .docx for the full 
-#   report.
+#   US_Scleroderma_Clinical_Trial_Disparities_Analysis.qmd file. Please see the 
+#   associated .qmd or .docx for the full report.
 
 
 
