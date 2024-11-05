@@ -11,8 +11,7 @@
 
 
 
-#####
-# install-packages
+# install-packages -----
 
 # install.packages("tidyverse")
 # install.packages("extrafont") # optional
@@ -20,8 +19,7 @@ library(tidyverse)  # for data wrangling
 library(extrafont)  # To use more fonts in graphs (optional)
 
 
-#####
-# read and transform BCC data
+# read and transform BCC data -----
 
 # read BCC US clinical trial demographic data
 bccCtDemo_df <- read_csv(
@@ -83,8 +81,7 @@ rownames(bcc_demo_contingency_table) <- c(
 )
 
 
-#####
-# BCC Chi-square test
+# BCC Chi-square test -----
 
 # conduct Chi-square test to compare BCC clinical trial vs. insurance claimant
 #   demographics
@@ -96,8 +93,7 @@ bcc_demo_chi_sq <- chisq.test(
 print(bcc_demo_chi_sq)
 
 
-#####
-# read and transform cSCC data
+# read and transform cSCC data -----
 
 # read cSCC U.S. clinical trial demographic data
 csccCtDemo_df <- read_csv(
@@ -159,8 +155,7 @@ rownames(cscc_demo_contingency_table) <- c(
 )
 
 
-#####
-# cSCC Chi-square test
+# cSCC Chi-square test -----
 
 # conduct Chi-Square test to compare cSCC clinical trial vs. insurance claimant
 #   demographics
@@ -172,8 +167,7 @@ cscc_demo_chi_sq <- chisq.test(
 print(cscc_demo_chi_sq)
 
 
-#####
-# Black representation in US BCC and cSCC Clinical Trials
+# Black representation in US BCC and cSCC Clinical Trials -----
 
 # calculate proportion of BCC clinical trial participants who are Black
 bcc_ct_prop_black <- bcc_ct_n_black / bcc_ct_n
@@ -209,8 +203,7 @@ bcc_n_unrep_black_yr / bcc_n_black_yr
 cscc_n_unrep_black_yr / cscc_n_black_yr
 
 
-#####
-# BCC demographics bar plot
+# BCC demographics bar plot -----
 
 # load windows fonts for bar graph labels (optional)
 # loadfonts(device = "win")
@@ -276,8 +269,7 @@ bccplot <- ggplot(
 print(bccplot)
 
 
-#####
-# cSCC demographics bar plot
+# cSCC demographics bar plot -----
 
 # proportion of US cSCC patients who are black
 cscc_claim_prop_black <- cscc_claim_n_black / cscc_claim_n
