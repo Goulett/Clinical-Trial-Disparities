@@ -9,8 +9,7 @@
 
 
 
-#####
-# Install and load required packages
+# Install and load required packages -----
 
 # install.packages("tidyverse")
 # install.packages("gt")
@@ -18,8 +17,7 @@ library(tidyverse)  # for data wrangling and visualization
 library(gt) # for creating table
 
 
-#####
-# Read and transform data
+# Read and transform data -----
 
 ct_demo_df <- read_csv(
   "./Data/20240717_usSScClinTrialDemo.csv",
@@ -45,8 +43,7 @@ ct_demo_df <- read_csv(
   drop_na(total_participants, black_participants)
 
 
-#####
-# Demographics Calculations
+# Demographics Calculations -----
 
 # total U.S. clinical trial participants
 ct_n <-  sum(ct_demo_df$total_participants, na.rm = TRUE)
@@ -107,8 +104,7 @@ demographics_df <- bind_cols(
 print(demographics_df, n = 25)
 
 
-#####
-# Chi-square test of proportion of US clinical trial participants who are black 
+# Chi-square test of proportion of US clinical trial participants who are black  -----
 #   vs. US scleroderma patients
 
 # calculate number of black U.S. clinical trial participants
